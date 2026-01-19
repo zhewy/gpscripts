@@ -1,0 +1,34 @@
+// this function ignores notes after a set time of sustain pedal being down
+// allows layering not to build up
+  
+Var
+    sustainPedalDownState : Integer = 0
+    pedalDownTime : Double
+    sustainPedalPassThruTime ("Time till ignore notes") : Parameter 100..2000 = 500 // time to ignore
+    
+//Called when a NoteOn message is received
+On ControlChangeEvent(m : ControlChangeMessage) Matching 64
+  var
+    ccValue : Integer = m.GetCCValue()
+    
+  If ccValue >= 64 then
+    If sustainPedalDownState == 0 then
+      sustainPedalDownState = 1
+      pedalDownTime = TimeSinceStartup()
+    End
+  Else
+      sustainPedalDownState = 0
+  End
+  
+  SendNow(m)
+End
+
+On NoteOnEvent(m : NoteMessage)
+  If sustainPedalDownState == 1 then
+    If TimeSinceStartup() - pedalDownTime < sustainPedalPassThruTime then
+       SendNow(m)
+    End
+  Else
+    SendNow(m)
+  End
+End

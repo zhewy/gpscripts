@@ -1,0 +1,6 @@
+
+
+remote notes:
+pushd popd
+
+pushd \\kofinas\homeshare (this maps to z:) which is now cloned kofinas

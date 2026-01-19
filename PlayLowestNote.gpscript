@@ -1,0 +1,93 @@
+var nt : NoteTracker
+
+var NoteVelocities: integer[128]
+var NoteChannels: integer[128]
+var CurrentNote: int = 128
+var CurrentChannel : int = 0
+
+/*
+ * This scriptlet filters out all notes except the lowest. All the notes, however, are
+ * tracked and when the current lowest note is released the next lowest note from
+ * the tracker starts. If all notes are released, of course no note is send
+ *
+ * The midi channels are recorded, but this scriptlet is not multichannel capable:
+ * If first a D3 on channel 1 is tracked and after that a D3 on channel 3 is coming in,
+ * the D3 on channel 1 is lost.
+ * To solve this, use a separate scriptlet for each channel
+ */
+
+
+Initialization
+    SetInfoMessage("MIDI Filter for only playing the lowest note")
+    SetDisplayMessage("MIDI Filter for only playing the lowest note")
+End
+
+On NoteOnEvent(m : NoteMessage)
+var heldNotes : integer array
+var newLowestNote: int
+var noteOff : NoteMessage
+
+    NoteVelocities[GetNoteNumber(m)] = GetVelocity(m)
+    NoteChannels[GetNoteNumber(m)]=GetChannel(m)
+
+    NoteTracker_GotNote(nt, m)
+    
+    heldNotes = NoteTracker_GetHeldNotes(nt)
+    newLowestNote = SmallestInt(heldNotes)
+    
+    if newLowestNote != CurrentNote
+    then
+        if CurrentNote < 128
+        then
+            noteOff = MakeNoteMessageEx(CurrentNote, 127, CurrentChannel)
+            SendNow(ReinterpretAsNoteOffMessage(noteOff))
+        end
+        SendNow(MakeNoteMessageEx(newLowestNote, NoteVelocities[newLowestNote], NoteChannels[newLowestNote]))
+        CurrentNote = newLowestNote
+        CurrentChannel = NoteChannels[newLowestNote]
+        SetDisplayMessage("Current: " + NoteNumberToNoteName(newLowestNote))
+    end
+End
+
+On NoteOffEvent(m : NoteMessage)
+var heldNotes : integer array
+var newLowestNote: int
+var noteOff : NoteMessage
+
+    NoteTracker_GotNote(nt, m)
+    heldNotes = NoteTracker_GetHeldNotes(nt)
+    
+    if Size(heldNotes) > 0 
+    then
+        newLowestNote = SmallestInt(heldNotes)
+        if newLowestNote != CurrentNote
+        then
+            noteOff = MakeNoteMessageEx(CurrentNote, 127, CurrentChannel)
+            SendNow(ReinterpretAsNoteOffMessage(noteOff))
+            SendNow(MakeNoteMessageEx(newLowestNote, NoteVelocities[newLowestNote], NoteChannels[newLowestNote]))
+            CurrentNote = newLowestNote
+            CurrentChannel = NoteChannels[newLowestNote]
+            SetDisplayMessage("Current: " + NoteNumberToNoteName(newLowestNote))
+        end
+    else
+        SendNow(m)
+        CurrentNote = 128
+        SetDisplayMessage("MIDI Filter for only playing the lowest note")
+    end
+end
+
+On ControlChangeEvent(m : ControlChangeMessage)
+    SendNow(m)
+End
+
+On PolyTouchEvent(m : PolyTouchMessage)
+    NoteVelocities[GetPolyTouchNoteNumber(m)] = GetByte(m, 2)    
+    if GetPolyTouchNoteNumber(m) == CurrentNote
+    then
+        SendNow(m)
+    end
+End
+
+On AfterTouchEvent(m : AfterTouchMessage)
+    SendNow(m)
+End

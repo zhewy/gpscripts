@@ -1,0 +1,94 @@
+var nt : NoteTracker
+
+var NoteVelocities: integer[128]
+var NoteChannels: integer[128]
+var CurrentNote: int = -1
+var CurrentChannel : int =0
+
+
+/*
+ * This scriptlet filters out all notes except the highest. All the notes, however, are
+ * tracked and when the current highest note is released the next highest note from
+ * the tracker starts. If all notes are released, of course no note is send
+ *
+ * The midi channels are recorded, but this scriptlet is not multichannel capable:
+ * If first a D3 on channel 1 is tracked and after that a D3 on channel 3 is coming in,
+ * the D3 on channel 1 is lost.
+ * To solve this, use a separate scriptlet for each channel
+ */
+
+Initialization
+    SetInfoMessage("MIDI Filter for only playing the highest note")
+    SetDisplayMessage("MIDI Filter for only playing the highest note")
+End
+
+On NoteOnEvent(m : NoteMessage)
+var heldNotes : integer array
+var newHighestNote: int
+var noteOff : NoteMessage
+
+    NoteVelocities[GetNoteNumber(m)] = GetVelocity(m)
+    NoteChannels[GetNoteNumber(m) ]= GetChannel(m)
+
+    NoteTracker_GotNote(nt, m)
+    
+    heldNotes = NoteTracker_GetHeldNotes(nt)
+    newHighestNote = LargestInt(heldNotes)
+    
+    if newHighestNote != CurrentNote
+    then
+        if CurrentNote > -1
+        then
+            noteOff = MakeNoteMessageEx(CurrentNote, 127, CurrentChannel)
+            SendNow(ReinterpretAsNoteOffMessage(noteOff))
+        end
+        SendNow(MakeNoteMessageEx(newHighestNote, NoteVelocities[newHighestNote], NoteChannels[newHighestNote]))
+        CurrentNote = newHighestNote
+        CurrentChannel = NoteChannels[newHighestNote]
+        SetDisplayMessage("Current: " + NoteNumberToNoteName(newHighestNote))
+        
+    end
+End
+
+On NoteOffEvent(m : NoteMessage)
+var heldNotes : integer array
+var newHighestNote: int
+var noteOff : NoteMessage
+
+    NoteTracker_GotNote(nt, m)
+    heldNotes = NoteTracker_GetHeldNotes(nt)
+    
+    if Size(heldNotes) > 0 
+    then
+        newHighestNote = LargestInt(heldNotes)
+        if newHighestNote != CurrentNote
+        then
+            noteOff = MakeNoteMessageEx(CurrentNote, 127, CurrentChannel)
+            SendNow(ReinterpretAsNoteOffMessage(noteOff))
+            SendNow(MakeNoteMessageEx(newHighestNote, NoteVelocities[newHighestNote], NoteChannels[newHighestNote]))
+            CurrentNote = newHighestNote
+            CurrentChannel = NoteChannels[newHighestNote]
+            SetDisplayMessage("Current: " + NoteNumberToNoteName(newHighestNote))
+        end
+    else
+        SendNow(m)
+        CurrentNote = -1
+        SetDisplayMessage("MIDI Filter for only playing the highest note")
+    end
+end
+
+On ControlChangeEvent(m : ControlChangeMessage)
+    SendNow(m)
+End
+
+On PolyTouchEvent(m : PolyTouchMessage)
+    NoteVelocities[GetPolyTouchNoteNumber(m)] = GetByte(m, 2)    
+    if GetPolyTouchNoteNumber(m) == CurrentNote
+    then
+        SendNow(m)
+    end
+End
+
+On AfterTouchEvent(m : AfterTouchMessage)
+    SendNow(m)
+End
