@@ -1,2 +1,141 @@
-//source https://community.gigperformer.com/t/scriptlet-chord-lock-auto-hold-pads-with-sustain-pedal/19346
+// source https://community.gigperformer.com/t/scriptlet-chord-lock-auto-hold-pads-with-sustain-pedal/19346
 
+Var
+   SustainPedalDown : Integer = 0                // Tracks whether the sustain pedal is pressed (1 for down, 0 for up)
+   RecentNoteTime ("New Chord Threshold Time") : Parameter 100..1000 = 500 // This is the time window (in milliseconds) we check when releasing notes
+   DelayedNotes : Integer Array                  // Stores notes that are held while the pedal is down
+   NoteTimes : Double Array                      // Tracks when each note in DelayedNotes was played (timestamps)
+   NoteVelocities : Integer Array                // Stores the velocity (how hard the note was pressed) for each held note
+   PendingNoteOffs : Integer Array               // Keeps track of notes that need to be turned off when the pedal is lifted
+
+// Custom function to remove an element from an array by shifting all elements after it
+Function removeElementAtIndex(arr : Integer Array, index : Integer)
+Var
+   i : Integer
+   // Shifts all elements one position to the left to "delete" the one at the index
+   For i = index; i < Size(arr) - 1; i = i + 1 Do
+      arr[i] = arr[i + 1]
+   End
+   // Shrinks the array by removing the last element (now duplicated after the shift)
+   RemoveLast(arr)
+End
+
+// Similar to the above but handles double arrays (for NoteTimes)
+Function removeElementAtIndexDouble(arr : Double Array, index : Integer)
+Var
+   i : Integer
+   // Shift elements and reduce the size for double (decimal) arrays
+   For i = index; i < Size(arr) - 1; i = i + 1 Do
+      arr[i] = arr[i + 1]
+   End
+   RemoveLast(arr)
+End
+
+// Sends NoteOff messages to turn off any pending notes that were delayed by the pedal
+Function sendPendingNoteOffs()
+Var
+   i : Integer
+
+   // Go through the list of pending notes and send the NoteOff message for each
+   For i = 0; i < Size(PendingNoteOffs); i = i + 1 Do
+      SendNow(MakeNoteMessage(PendingNoteOffs[i], 0))  // Sends NoteOff (velocity 0) for the note
+   End
+
+   // Clear the list of pending notes after they are turned off
+   ClearArray(PendingNoteOffs)
+End
+
+// Plays notes that were delayed by the pedal, but only if they were played recently (within RecentNoteTime)
+Function playRecentNotes()
+Var
+   currentTime : Double
+   i : Integer
+
+   currentTime = TimeSinceStartup()  // Get the current time
+
+   // Check each delayed note and send NoteOn if it was played recently
+   For i = 0; i < Size(DelayedNotes); i = i + 1 Do
+      If currentTime - NoteTimes[i] <= RecentNoteTime Then
+         // Send the NoteOn message for the note with its original velocity
+         SendNow(MakeNoteMessage(DelayedNotes[i], NoteVelocities[i]))
+      End
+   End
+
+   // Clear the delayed note lists after processing them
+   ClearArray(DelayedNotes)
+   ClearArray(NoteTimes)
+   ClearArray(NoteVelocities)
+End
+
+// Handles sustain pedal events (CC 64), controlling when notes are held or released
+On ControlChangeEvent(m : ControlChangeMessage) Matching 64
+   Var
+      ccValue : Integer = m.GetCCValue()
+
+   // When the pedal is pressed down (CC value >= 64)
+   If ccValue >= 64 Then
+      SustainPedalDown = 1  // Mark that the pedal is pressed
+
+   // When the pedal is released (CC value < 64)
+   Else
+      SustainPedalDown = 0  // Mark that the pedal is released
+      sendPendingNoteOffs()  // Turn off any pending notes
+      playRecentNotes()      // Play any notes that were delayed
+   End
+
+   // Pass the control change message through (no changes made here)
+   SendNow(m)
+End
+
+// Handles when notes are played (NoteOn) or released (NoteOff)
+On NoteEvent(m : NoteMessage)
+Var
+   currentTime : Double
+   noteNumber : Integer
+   velocity : Integer
+   isNoteOn : Boolean
+   noteIndex : Integer
+
+   noteNumber = GetNoteNumber(m)  // Get the number of the note played
+   velocity = GetVelocity(m)      // Get the velocity of the note
+   currentTime = TimeSinceStartup()  // Get the current time
+   isNoteOn = IsNoteOn(m)         // Check if this is a NoteOn event
+
+   // If it's a NoteOn event (a note is being played)
+   If isNoteOn Then
+      // If this note was already marked to be turned off, remove it from the pending list
+      noteIndex = IndexOf(PendingNoteOffs, noteNumber)
+      If noteIndex >= 0 Then
+         removeElementAtIndex(PendingNoteOffs, noteIndex)
+      End
+
+      // If the pedal is down, hold the note (don't play it immediately)
+      If SustainPedalDown == 1 Then
+         DelayedNotes <-- noteNumber       // Store the note number
+         NoteTimes <-- currentTime         // Store the time the note was played
+         NoteVelocities <-- velocity       // Store the velocity of the note
+      Else
+         // If the pedal is not down, play the note immediately
+         SendNow(m)
+      End
+
+   // If it's a NoteOff event (a note is being released)
+   Else
+      // If the pedal is down, delay turning off the note
+      If SustainPedalDown == 1 Then
+         // Remove the note from the delayed list if it was played
+         noteIndex = IndexOf(DelayedNotes, noteNumber)
+         If noteIndex >= 0 Then
+            removeElementAtIndex(DelayedNotes, noteIndex)
+            removeElementAtIndexDouble(NoteTimes, noteIndex)
+            removeElementAtIndex(NoteVelocities, noteIndex)
+         End
+
+         // Add the note to the list of notes to be turned off when the pedal is released
+         PendingNoteOffs <-- noteNumber
+      Else
+         // If the pedal is not down, turn the note off immediately
+         SendNow(m)
+      End
+   End
+End
