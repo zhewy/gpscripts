@@ -5,26 +5,47 @@ Var
     sustainPedalDownState : Integer = 0
     pedalDownTime : Double
     sustainPedalPassThruTime ("Time till ignore notes") : Parameter 100..2000 = 500 // time to ignore
+    playHeldKeyVelocity ("held key velocity") : Parameter 1..127 = 40 //
+    nt : NoteTracker    
+
+Function SendAllNoteOnIfNeeded()
+  var
+    PendingNoteOffs : Integer Array
+    i : Integer
     
+  PendingNoteOffs = NoteTracker_GetHeldNotes(nt)
+  
+  for i=0 ; i<Size(PendingNoteOffs); i=i+1 Do
+    SendNow(MakeNoteMessage(PendingNoteOffs[i],RandomRange (1, playHeldKeyVelocity)))
+  End
+
+End
+
 //Called when a NoteOn message is received
 On ControlChangeEvent(m : ControlChangeMessage) Matching 64
   var
     ccValue : Integer = m.GetCCValue()
     
-  If ccValue >= 64 then
-    If sustainPedalDownState == 0 then
+  If sustainPedalDownState == 1 then
+    If ccValue < 64 then
+      sustainPedalDownState = 0
+      SendAllNoteOnIfNeeded()
+    End
+  Else // sustainPedalDownState == 0
+    If ccValue >= 64 then
       sustainPedalDownState = 1
       pedalDownTime = TimeSinceStartup()
     End
-  Else
-      sustainPedalDownState = 0
   End
-  
+
   SendNow(m)
 End
 
 On NoteOnEvent(m : NoteMessage)
-  If sustainPedalDownState == 1 then
+
+  NoteTracker_GotNote(nt,m)  
+
+  If IsNoteOn(m) && sustainPedalDownState == 1 then
     If TimeSinceStartup() - pedalDownTime < sustainPedalPassThruTime then
        SendNow(m)
     End
