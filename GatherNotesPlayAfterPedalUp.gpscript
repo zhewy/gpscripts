@@ -43,12 +43,12 @@ On NoteEvent(m : NoteMessage)
 
   NoteTracker_GotNote(nt,m)
 
-  If IsNoteOn(m) then
-    If sustainPedalDownState == 0 then
-      SendNow(m)
-    End
-  Else
-    SendNow(m)
-  End
+//  If IsNoteOn(m) then
+//    If sustainPedalDownState == 0 then
+//      SendNow(m)
+//    End
+//  Else
+//    SendNow(m)
+//  End
 
 End  
