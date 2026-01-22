@@ -44,7 +44,7 @@ On ControlChangeEvent(m : ControlChangeMessage) Matching 64
   SendNow(m)
 End
 
-On NoteOnEvent(m : NoteMessage)
+On NoteEvent(m : NoteMessage)
 
   NoteTracker_GotNote(nt,m)  
 
