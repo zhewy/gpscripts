@@ -2,24 +2,27 @@
 // allows layering not to build up
   
 Var
-    sustainPedalDownState : Integer = 0
+    sustainPedalDownState : boolean = false
     pedalDownTime : Double
     sustainPedalPassThruTime ("Time till ignore notes") : Parameter 100..2000 = 500 // time to ignore
     playHeldKeyVelocity ("held key velocity") : Parameter 1..127 = 40
     collectKeysAfterPedal ("collect keys") : Parameter "Disabled", "Enabled" = "Enabled" // disable/enable collect and play after pedal down
-    nt : NoteTracker    
+    nt : NoteTracker
+    noteVelocities : Integer[128]
+    ntPending : NoteTracker
 
 Function SendAllNoteOnIfNeeded()
   var
-    PendingNoteOffs : Integer Array
-    i : Integer
+    PendingNotes : Integer Array
+    i,n : Integer
     
-  PendingNoteOffs = NoteTracker_GetHeldNotes(nt)
+  PendingNotes = NoteTracker_GetHeldNotes(nt)
   
-  for i=0 ; i<Size(PendingNoteOffs); i=i+1 Do
-    SendNow(MakeNoteMessage(PendingNoteOffs[i],RandomRange (1, playHeldKeyVelocity)))
+  for i=0 ; i<Size(PendingNotes); i=i+1 Do
+    SendNow(MakeNoteMessage(PendingNotes[i], noteVelocities[PendingNotes[i]]))
   End
 
+  NoteTracker_Clear(ntPending)
 End
 
 //Called when a NoteOn message is received
@@ -27,16 +30,16 @@ On ControlChangeEvent(m : ControlChangeMessage) Matching 64
   var
     ccValue : Integer = m.GetCCValue()
     
-  If sustainPedalDownState == 1 then
+  If sustainPedalDownState == true then
     If ccValue < 64 then
-      sustainPedalDownState = 0
+      sustainPedalDownState = false
       If collectKeysAfterPedal == "Enabled" then
         SendAllNoteOnIfNeeded()
       End
     End
-  Else // sustainPedalDownState == 0
+  Else // sustainPedalDownState == false
     If ccValue >= 64 then
-      sustainPedalDownState = 1
+      sustainPedalDownState = true
       pedalDownTime = TimeSinceStartup()
     End
   End
@@ -45,10 +48,11 @@ On ControlChangeEvent(m : ControlChangeMessage) Matching 64
 End
 
 On NoteEvent(m : NoteMessage)
+  NoteTracker_GotNote(nt,m)
+  
+  noteVelocities[GetNoteNumber(m)] = GetVelocity (m)
 
-  NoteTracker_GotNote(nt,m)  
-
-  If IsNoteOn(m) && sustainPedalDownState == 1 then
+  If IsNoteOn(m) && sustainPedalDownState == true then
     If TimeSinceStartup() - pedalDownTime < sustainPedalPassThruTime then
        SendNow(m)
     End
@@ -56,3 +60,4 @@ On NoteEvent(m : NoteMessage)
     SendNow(m)
   End
 End
+
