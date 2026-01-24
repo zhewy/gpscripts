@@ -55,9 +55,10 @@ On NoteOnEvent(m : NoteMessage)
     Else
        NoteTracker_GotNote(ntPending,m)
     End
+  Else
+    SendNow(m)
+    NoteTracker_GotNote(ntPending,m)
   End
-  SendNow(m)
-  NoteTracker_GotNote(ntPending,m)
 
 End
 
