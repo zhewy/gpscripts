@@ -7,7 +7,6 @@ Var
     sustainPedalPassThruTime ("Time till ignore notes") : Parameter 100..2000 = 500 // time to ignore
     playHeldKeyVelocity ("held key velocity") : Parameter 1..127 = 40
     collectKeysAfterPedal ("collect keys") : Parameter "Disabled", "Enabled" = "Enabled" // disable/enable collect and play after pedal down
-    nt : NoteTracker
     noteVelocities : Integer[128]
     ntPending : NoteTracker
 
@@ -16,7 +15,7 @@ Function SendAllNoteOnIfNeeded()
     PendingNotes : Integer Array
     i,n : Integer
     
-  PendingNotes = NoteTracker_GetHeldNotes(nt)
+  PendingNotes = NoteTracker_GetHeldNotes(ntPending)
   
   for i=0 ; i<Size(PendingNotes); i=i+1 Do
     SendNow(MakeNoteMessage(PendingNotes[i], noteVelocities[PendingNotes[i]]))
@@ -47,17 +46,23 @@ On ControlChangeEvent(m : ControlChangeMessage) Matching 64
   SendNow(m)
 End
 
-On NoteEvent(m : NoteMessage)
-  NoteTracker_GotNote(nt,m)
-  
+On NoteOnEvent(m : NoteMessage)
   noteVelocities[GetNoteNumber(m)] = GetVelocity (m)
 
-  If IsNoteOn(m) && sustainPedalDownState == true then
+  If sustainPedalDownState == true then
     If TimeSinceStartup() - pedalDownTime < sustainPedalPassThruTime then
        SendNow(m)
+    Else
+       NoteTracker_GotNote(ntPending,m)
     End
-  Else
-    SendNow(m)
   End
+  SendNow(m)
+  NoteTracker_GotNote(ntPending,m)
+
+End
+
+On NoteOffEvent(m : NoteMessage)
+  NoteTracker_GotNote(ntPending,m)  
+  SendNow(m)
 End
 
