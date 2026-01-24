@@ -5,7 +5,6 @@ Var
     sustainPedalDownState : boolean = false
     pedalDownTime : Double
     sustainPedalPassThruTime ("Time till ignore notes") : Parameter 100..2000 = 500 // time to ignore
-    playHeldKeyVelocity ("held key velocity") : Parameter 1..127 = 40
     collectKeysAfterPedal ("collect keys") : Parameter "Disabled", "Enabled" = "Enabled" // disable/enable collect and play after pedal down
     noteVelocities : Integer[128]
     ntPending : NoteTracker
