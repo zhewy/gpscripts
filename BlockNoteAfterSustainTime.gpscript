@@ -34,15 +34,18 @@ On ControlChangeEvent(m : ControlChangeMessage) Matching 64
       If collectKeysAfterPedal == "Enabled" then
         SendAllNoteOnIfNeeded()
       End
+      SendNow(m)
     End
   Else // sustainPedalDownState == false
     If ccValue >= 64 then
       sustainPedalDownState = true
       pedalDownTime = TimeSinceStartup()
+      SendNow(m)
     End
+    
   End
 
-  SendNow(m)
+  
 End
 
 On NoteOnEvent(m : NoteMessage)
@@ -61,7 +64,7 @@ On NoteOnEvent(m : NoteMessage)
 End
 
 On NoteOffEvent(m : NoteMessage)
-  NoteTracker_GotNote(ntPending,m)  
   SendNow(m)
+  NoteTracker_GotNote(ntPending,m)    
 End
 
