@@ -1,0 +1,10 @@
+var
+ low_note ("Low Note"): Discrete Parameter asNoteNames 0 .. 127 = NoteNumberToNoteName(C-2)
+ high_note ("High Note"): Discrete Parameter asNoteNames 0 .. 127 = NoteNumberToNoteName(C8)
+
+On NoteEvent(m : NoteMessage)
+ if GetNoteNumber(m) >= NoteNameToNoteNumber(low_note) and
+    GetNoteNumber(m) <= NoteNameToNoteNumber(high_note) then
+  SendNow(m)
+ end 
+End
