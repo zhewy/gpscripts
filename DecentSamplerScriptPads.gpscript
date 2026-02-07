@@ -1,333 +1,128 @@
-
+//$<AutoDeclare>
+// DO NOT EDIT THIS SECTION MANUALLY
 Var
-   Global_MIDI : MidiInBlock
-   TRIGGER_DRONE_PAD: Widget
-   SysActions : PluginBlock  // References to a system actions plugin block
+   DroneMidiAutoIn : MidiInBlock
+   DronePadTrigger : Widget
+   DronePadDb : Widget
+   DronePadEb : Widget
+   DronePadGb : Widget
+   DronePadAb : Widget
+   DronePadBb : Widget
+   DronePadC : Widget
+   DronePadD : Widget
+   DronePadE : Widget
+   DronePadF : Widget
+   DronePadG : Widget
+   DronePadA : Widget
+   DronePadB : Widget
+   BrightPadsSel : Widget
+   ChoirPadsSel : Widget
+   ClassicPadsSel : Widget
+   DarkPadsSel : Widget
+   EvolPadsSel : Widget
+   GuitarPadsSel : Widget
+   OrganPadsSel : Widget
+   PurePadsSel : Widget
+   RevPadsSel : Widget
+   SimplePadsSel : Widget
+   StringPadsSel : Widget
+   WarmPadsSel : Widget
+//$</AutoDeclare>
 
-On WidgetValueChanged(newValue : double) from TRIGGER_DRONE_PAD
-var
-   MM : MidiMessage
-   songKey : string
+
+// Called when a single widget value has changed
+On WidgetValueChanged(newValue : double) from DronePadTrigger
+  var
+    MM : MidiMessage
+    CC : ControlChangeMessage
+
+  If GetWidgetValue(DronePadTrigger) == 0.0 then 
+        AllNotesOff(DroneMidiAutoIn) 
+  else
+  
+
+   select
+      GetWidgetValue(BrightPadsSel) == 1 do
+        SetParameter(DroneMidiAutoIn, 159,0.09) 
+      GetWidgetValue(ChoirPadsSel) == 1 do
+        SetParameter(DroneMidiAutoIn, 159,0.09*2) 
+      GetWidgetValue(ClassicPadsSel) == 1 do
+        SetParameter(DroneMidiAutoIn, 159,0.09*3) 
+      GetWidgetValue(DarkPadsSel) == 1 do
+        SetParameter(DroneMidiAutoIn, 159,0.09*4)          
+      GetWidgetValue(EvolPadsSel) == 1 do 
+        SetParameter(DroneMidiAutoIn, 159,0.09*5)
+      GetWidgetValue(GuitarPadsSel) == 1 do 
+        SetParameter(DroneMidiAutoIn, 159,0.09*6)
+      GetWidgetValue(GuitarPadsSel) == 1 do 
+        SetParameter(DroneMidiAutoIn, 159,0.09*7)
+      GetWidgetValue(OrganPadsSel) == 1 do 
+        SetParameter(DroneMidiAutoIn, 159,0.08*8)
+      GetWidgetValue(PurePadsSel) == 1 do 
+        SetParameter(DroneMidiAutoIn, 159,0.08*9)
+      GetWidgetValue(RevPadsSel) == 1 do 
+        SetParameter(DroneMidiAutoIn, 159,0.08*10)
+      GetWidgetValue(SimplePadsSel) == 1 do 
+        SetParameter(DroneMidiAutoIn, 159,0.08*11)
+      GetWidgetValue(StringPadsSel) == 1 do 
+        SetParameter(DroneMidiAutoIn, 159,0.08*12)
+      GetWidgetValue(WarmPadsSel) == 1 do 
+        SetParameter(DroneMidiAutoIn, 159,1)         
+    end
+  
+  
+    select
     
-    If GetWidgetValue(TRIGGER_DRONE_PAD) == 0.0
-       then AllNotesOff(Global_MIDI)    
-       else
-          songKey = GetParameterText(SysActions, 68)  // 68 is the parameter number for the song key
-          Print(songKey)
-          
-          select  
-          
-            songKey == "C Major" do
-               MM = MakeNoteMessage (60,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (67,64)  
-               SendNow(Global_MIDI, MM)
-
-            songKey == "C#/Db Major" do                 
-               MM = MakeNoteMessage (61,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (68,64) 
-               SendNow(Global_MIDI, MM)
-    
-            songKey == "D Major" do                
-               MM = MakeNoteMessage (62,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (69,64) 
-               SendNow(Global_MIDI, MM)
-
-            songKey == "D#/Eb Major" do                
-               MM = MakeNoteMessage (63,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (70,64) 
-               SendNow(Global_MIDI, MM)
-
-            songKey == "E Major" do
-               MM = MakeNoteMessage (64,64)
-               SendNow(Global_MIDI, MM)  
-               MM = MakeNoteMessage (71,64)  
-               SendNow(Global_MIDI, MM)
-
-            songKey == "F Major" do                 
-               MM = MakeNoteMessage (65,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (72,64) 
-               SendNow(Global_MIDI, MM)
-    
-            songKey == "F#/Gb Major" do                
-               MM = MakeNoteMessage (66,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (73,64) 
-               SendNow(Global_MIDI, MM)
-
-            songKey == "G Major" do                
-               MM = MakeNoteMessage (67,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (74,64) 
-               SendNow(Global_MIDI, MM)
-
-            songKey == "G#/Ab Major" do
-               MM = MakeNoteMessage (68,64)
-               SendNow(Global_MIDI, MM)  
-               MM = MakeNoteMessage (75,64)  
-               SendNow(Global_MIDI, MM)
-
-            songKey == "A Major" do                 
-               MM = MakeNoteMessage (69,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (76,64) 
-               SendNow(Global_MIDI, MM)
-    
-            songKey == "A#/Bb Major" do                
-               MM = MakeNoteMessage (70,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (77,64) 
-               SendNow(Global_MIDI, MM)
-
-            songKey == "B Major" do                
-               MM = MakeNoteMessage (71,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (78,64) 
-               SendNow(Global_MIDI, MM)
-            
-            songKey == "A Minor" do
-               MM = MakeNoteMessage (60,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (67,64)  
-               SendNow(Global_MIDI, MM)
-
-            songKey == "A#/Bb Minor" do                 
-               MM = MakeNoteMessage (61,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (68,64) 
-               SendNow(Global_MIDI, MM)
-    
-            songKey == "B Minor" do                
-               MM = MakeNoteMessage (62,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (69,64) 
-               SendNow(Global_MIDI, MM)
-
-            songKey == "C Minor" do                
-               MM = MakeNoteMessage (63,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (70,64) 
-               SendNow(Global_MIDI, MM)
-
-            songKey == "C#/Db Minor" do
-               MM = MakeNoteMessage (64,64)
-               SendNow(Global_MIDI, MM)  
-               MM = MakeNoteMessage (71,64)  
-               SendNow(Global_MIDI, MM)
-
-            songKey == "D Minor" do                 
-               MM = MakeNoteMessage (65,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (72,64) 
-               SendNow(Global_MIDI, MM)
-    
-            songKey == "D#/Eb Minor" do                
-               MM = MakeNoteMessage (66,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (73,64) 
-               SendNow(Global_MIDI, MM)
-
-            songKey == "E Minor" do                
-               MM = MakeNoteMessage (67,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (74,64) 
-               SendNow(Global_MIDI, MM)
-
-            songKey == "F Minor" do
-               MM = MakeNoteMessage (68,64)
-               SendNow(Global_MIDI, MM)  
-               MM = MakeNoteMessage (75,64)  
-               SendNow(Global_MIDI, MM)
-
-            songKey == "F#/Gb Minor" do                 
-               MM = MakeNoteMessage (69,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (76,64) 
-               SendNow(Global_MIDI, MM)
-    
-            songKey == "G Minor" do                
-               MM = MakeNoteMessage (70,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (77,64) 
-               SendNow(Global_MIDI, MM)
-
-            songKey == "G#/Ab Minor" do                
-               MM = MakeNoteMessage (71,64)
-               SendNow(Global_MIDI, MM)
-               MM = MakeNoteMessage (78,64) 
-               SendNow(Global_MIDI, MM)
+      GetWidgetValue(DronePadC) == 1 do
+        MM = MakeNoteMessage (36,127)
+        SendNow(DroneMidiAutoIn, MM)
  
-          End // Select
-    End // If
-    
-End // WidgetValueChanged
-Var
-   Global_MIDI2 : MidiInBlock
-   TRIGGER_DRONE_PAD2: Widget 
-
-On WidgetValueChanged(newValue : double) from TRIGGER_DRONE_PAD2
-var
-   MM : MidiMessage
-   songKey : string
-    
-    If GetWidgetValue(TRIGGER_DRONE_PAD2) == 0.0
-       then AllNotesOff(Global_MIDI2)    
-       else
-          songKey = GetParameterText(SysActions, 68)  // 68 is the parameter number for the song key
-          Print(songKey)
-          
-          select  
-          
-            songKey == "C Major" do
-               MM = MakeNoteMessage (60,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (67,64)  
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "C#/Db Major" do                 
-               MM = MakeNoteMessage (61,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (68,64) 
-               SendNow(Global_MIDI2, MM)
-    
-            songKey == "D Major" do                
-               MM = MakeNoteMessage (62,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (69,64) 
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "D#/Eb Major" do                
-               MM = MakeNoteMessage (63,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (70,64) 
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "E Major" do
-               MM = MakeNoteMessage (64,64)
-               SendNow(Global_MIDI2, MM)  
-               MM = MakeNoteMessage (71,64)  
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "F Major" do                 
-               MM = MakeNoteMessage (65,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (72,64) 
-               SendNow(Global_MIDI2, MM)
-    
-            songKey == "F#/Gb Major" do                
-               MM = MakeNoteMessage (66,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (73,64) 
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "G Major" do                
-               MM = MakeNoteMessage (55,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (62,64) 
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "G#/Ab Major" do
-               MM = MakeNoteMessage (56,64)
-               SendNow(Global_MIDI2, MM)  
-               MM = MakeNoteMessage (63,64)  
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "A Major" do                 
-               MM = MakeNoteMessage (57,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (64,64) 
-               SendNow(Global_MIDI2, MM)
-    
-            songKey == "A#/Bb Major" do                
-               MM = MakeNoteMessage (58,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (65,64) 
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "B Major" do                
-               MM = MakeNoteMessage (59,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (66,64) 
-               SendNow(Global_MIDI2, MM)
-            
-            songKey == "A Minor" do
-               MM = MakeNoteMessage (60,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (67,64)  
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "A#/Bb Minor" do                 
-               MM = MakeNoteMessage (61,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (68,64) 
-               SendNow(Global_MIDI2, MM)
-    
-            songKey == "B Minor" do                
-               MM = MakeNoteMessage (62,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (69,64) 
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "C Minor" do                
-               MM = MakeNoteMessage (63,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (70,64) 
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "C#/Db Minor" do
-               MM = MakeNoteMessage (64,64)
-               SendNow(Global_MIDI2, MM)  
-               MM = MakeNoteMessage (71,64)  
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "D Minor" do                 
-               MM = MakeNoteMessage (65,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (72,64) 
-               SendNow(Global_MIDI2, MM)
-    
-            songKey == "D#/Eb Minor" do                
-               MM = MakeNoteMessage (66,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (73,64) 
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "E Minor" do                
-               MM = MakeNoteMessage (55,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (62,64) 
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "F Minor" do
-               MM = MakeNoteMessage (56,64)
-               SendNow(Global_MIDI2, MM)  
-               MM = MakeNoteMessage (63,64)  
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "F#/Gb Minor" do                 
-               MM = MakeNoteMessage (57,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (64,64) 
-               SendNow(Global_MIDI2, MM)
-    
-            songKey == "G Minor" do                
-               MM = MakeNoteMessage (58,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (65,64) 
-               SendNow(Global_MIDI2, MM)
-
-            songKey == "G#/Ab Minor" do                
-               MM = MakeNoteMessage (59,64)
-               SendNow(Global_MIDI2, MM)
-               MM = MakeNoteMessage (66,64) 
-               SendNow(Global_MIDI2, MM)
+      GetWidgetValue(DronePadDb) == 1 do
+        MM = MakeNoteMessage (37,127)
+        SendNow(DroneMidiAutoIn, MM)        
  
-          End // Select
-    End // If
+      GetWidgetValue(DronePadD) == 1 do
+        MM = MakeNoteMessage (38,127)
+        SendNow(DroneMidiAutoIn, MM)
+
+      GetWidgetValue(DronePadEb) == 1 do
+        MM = MakeNoteMessage (39,127)
+        SendNow(DroneMidiAutoIn, MM)  
+        
+      GetWidgetValue(DronePadE) == 1 do
+        MM = MakeNoteMessage (40,127)
+        SendNow(DroneMidiAutoIn, MM)  
+        
+      GetWidgetValue(DronePadF) == 1 do
+        MM = MakeNoteMessage (41,127)
+        SendNow(DroneMidiAutoIn, MM)  
+        
+      GetWidgetValue(DronePadGb) == 1 do
+        MM = MakeNoteMessage (42,127)
+        SendNow(DroneMidiAutoIn, MM)          
+        
+      GetWidgetValue(DronePadG) == 1 do
+        MM = MakeNoteMessage (43,127)
+        SendNow(DroneMidiAutoIn, MM)
+        
+      GetWidgetValue(DronePadAb) == 1 do
+        MM = MakeNoteMessage (44,127)
+        SendNow(DroneMidiAutoIn, MM)  
+        
+      GetWidgetValue(DronePadA) == 1 do
+        MM = MakeNoteMessage (45,127)
+        SendNow(DroneMidiAutoIn, MM)  
+        
+      GetWidgetValue(DronePadBb) == 1 do
+        MM = MakeNoteMessage (46,127)
+        SendNow(DroneMidiAutoIn, MM)  
+        
+      GetWidgetValue(DronePadB) == 1 do
+        MM = MakeNoteMessage (47,127)
+        SendNow(DroneMidiAutoIn, MM)          
+        
+    End // select DronePad
     
-    
-End // WidgetValueChanged
+  End // if
+End 
+
